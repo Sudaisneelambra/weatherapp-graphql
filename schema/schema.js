@@ -97,7 +97,7 @@ const mutation = new GraphQLObjectType({
                       return alredy
                     } else {
                         // Return a message if the user is not found
-                        throw new Error('User not found please login.');
+                        throw new Error('User not found please signup.');
 
                     }
                 })
