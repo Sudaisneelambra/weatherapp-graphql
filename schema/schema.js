@@ -1,4 +1,6 @@
 const Users = require('../modals/user');
+const places = require('../modals/places');
+
 
 const bcrypt = require('bcrypt');
 
@@ -12,14 +14,20 @@ const {
     GraphQLEnumType,
 } = require('graphql');
 
-// Project Type
+// user Type
 const UserType = new GraphQLObjectType({
     name: 'user',
     fields: () => ({
-        id: { type: GraphQLID },
         name: { type: GraphQLString },
         email: { type: GraphQLString },
         password: { type: GraphQLString },
+    }),
+});
+
+const selectedcity = new GraphQLObjectType({
+    name: 'city',
+    fields: () => ({
+        placename: { type: GraphQLString },
     }),
 });
 
@@ -28,17 +36,10 @@ const UserType = new GraphQLObjectType({
 const RootQuery = new GraphQLObjectType({
     name: 'RootQueryType',
     fields: {
-        UserGet: {
-            type: new GraphQLList(UserType),
+        getplaces: {
+            type: new GraphQLList(selectedcity),
             resolve(parent, args) {
-                return Project.find();
-            },
-        },
-        UserLogin: {
-            type: UserType,
-            args: { email: { type: GraphQLString } },
-            resolve(parent, args) {
-                return Project.findOne({email: args.email});
+                return places.find()
             },
         },
     },
@@ -82,6 +83,22 @@ const mutation = new GraphQLObjectType({
                 });
             },
         },
+        deleteplace: {
+            type: new GraphQLList(selectedcity),
+            resolve(parent, args) {
+                return places.deleteMany({})
+                    .then(deletedUser => {
+                        if (!deletedUser) {
+                            throw new Error(' places not found.');
+                        }
+                        return deletedUser;
+                    })
+                    .catch(error => {
+                        console.log(error);
+                        throw error; 
+                    });
+            }
+        },
         loginuser: {
             type: UserType,
             args: {
@@ -91,13 +108,41 @@ const mutation = new GraphQLObjectType({
             resolve(parent, args) {
                 return Users.findOne({ email: args.email, password: args.password })
                 .then (alredy => {
-                    console.log(alredy);
                     if (alredy) {
                         // Navigate to the home page if the user already exists
                       return alredy
                     } else {
                         // Return a message if the user is not found
                         throw new Error('User not found please signup.');
+
+                    }
+                })
+                .catch(error => {
+                    throw error
+                });
+            },
+        },
+        addcity: {
+            type: selectedcity,
+            args: {
+                placename: { type: GraphQLNonNull(GraphQLString) },
+            },
+            resolve(parent, args) {
+                return places.findOne({ placename: args.placename})
+                .then (alredy => {
+                    if (alredy) {
+                        throw new Error('User already added this place');
+                    } else {
+                        const place= new places({
+                            placename:args.placename
+                        })
+                        return place.save()
+                        .then(savedplace => {
+                            return savedplace;
+                        })
+                        .catch(error => {
+                            console.log(error);
+                        });
 
                     }
                 })
