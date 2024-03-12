@@ -1,17 +1,12 @@
-const Users = require('../modals/user');
-const places = require('../modals/places');
-
-
-const bcrypt = require('bcrypt');
+const Users = require('../models/user');
+const places = require('../models/places');
 
 const {
     GraphQLObjectType,
-    GraphQLID,
     GraphQLString,
     GraphQLSchema,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLEnumType,
 } = require('graphql');
 
 // user Type
@@ -38,8 +33,16 @@ const RootQuery = new GraphQLObjectType({
     fields: {
         getplaces: {
             type: new GraphQLList(selectedcity),
-            resolve(parent, args) {
-                return places.find()
+            resolve: async(parent, args)=>{
+                const place = await places.find()
+                return place
+            },
+        },
+        getemail: {
+            type: new GraphQLList(UserType),
+            resolve: async (parent, args)=>{
+              const one= await Users.find().select('email')
+              return one
             },
         },
     },
@@ -66,7 +69,6 @@ const mutation = new GraphQLObjectType({
                             name: args.name,
                             email: args.email,
                             password: args.password
-                            // Add other fields as needed
                         });
         
                         return newUser.save()
@@ -109,10 +111,8 @@ const mutation = new GraphQLObjectType({
                 return Users.findOne({ email: args.email, password: args.password })
                 .then (alredy => {
                     if (alredy) {
-                        // Navigate to the home page if the user already exists
                       return alredy
                     } else {
-                        // Return a message if the user is not found
                         throw new Error('User not found please signup.');
 
                     }
